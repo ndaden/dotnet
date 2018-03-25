@@ -1,0 +1,7 @@
+C:\git\dotnet\Monostate\bin\Debug\Monostate.exe.config
+C:\git\dotnet\Monostate\bin\Debug\Monostate.exe
+C:\git\dotnet\Monostate\bin\Debug\Monostate.pdb
+C:\git\dotnet\Monostate\obj\Debug\Monostate.csprojResolveAssemblyReference.cache
+C:\git\dotnet\Monostate\obj\Debug\Monostate.csproj.CoreCompileInputs.cache
+C:\git\dotnet\Monostate\obj\Debug\Monostate.exe
+C:\git\dotnet\Monostate\obj\Debug\Monostate.pdb

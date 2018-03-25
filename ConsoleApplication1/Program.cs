@@ -6,10 +6,19 @@ using System.Text;
 using System.Threading.Tasks;
 using MoreLinq;
 using NUnit.Framework;
+using Autofac;
 
 namespace ConsoleApplication1
 {
-    class SingletonDatabase
+    internal interface IDatabase
+    {
+        int GetPopulation(string capital);
+    }
+
+    /// <summary>
+    /// Singleton 
+    /// </summary>
+    class SingletonDatabase : IDatabase
     {
         private Dictionary<string, int> _capitals;
         public static int InstanceCount;
@@ -31,6 +40,25 @@ namespace ConsoleApplication1
         }
     }
 
+    /// <summary>
+    /// Ordinary Database
+    /// </summary>
+    class OrdinaryDatabase : IDatabase
+    {
+        private Dictionary<string, int> _capitals;
+
+        public OrdinaryDatabase()
+        {
+            string filepath = "capitals.txt";
+            _capitals = File.ReadAllLines(filepath).Batch(2).ToDictionary(list => list.ElementAt(0).Trim(), list => int.Parse(list.ElementAt(1)));
+        }
+
+        public int GetPopulation(string capital)
+        {
+            return _capitals[capital];
+        }
+    }
+
     class SingletonFinder
     {
         public int GetTotalPopulation(IEnumerable<string> names)
@@ -44,6 +72,40 @@ namespace ConsoleApplication1
             return result;
         }
     }
+
+    class ConfigurableFinder
+    {
+        private IDatabase _database;
+
+        public ConfigurableFinder(IDatabase database)
+        {
+            this._database = database ?? throw new ArgumentNullException(paramName: nameof(database));               
+        }
+
+        public int GetTotalPopulation(IEnumerable<string> names)
+        {
+            int result = 0;
+            foreach (var name in names)
+            {
+                result += _database.GetPopulation(name);
+            }
+
+            return result;
+        }
+    }
+
+    class DummyDatabase : IDatabase
+    {
+        private Dictionary<string, int> capitals = new Dictionary<string, int> { { "rabat", 1 }, { "casablanca", 2 } };
+
+        public int GetPopulation(string capital)
+        {
+            return capitals[capital];
+        }
+    }
+
+
+
     class Program
     {
         static void Main(string[] args)
@@ -84,6 +146,34 @@ namespace ConsoleApplication1
             int result = new SingletonFinder().GetTotalPopulation(names);
 
             Assert.AreEqual(expectedTotal, result);
+        }
+
+        [Test]
+        public void ConfigurableDatabaseTest()
+        {
+            var cd = new ConfigurableFinder(new DummyDatabase());
+
+            int result = cd.GetTotalPopulation(new List<string> { "rabat", "casablanca" });
+
+            Assert.AreEqual(3, result);
+        }
+
+        [Test]
+        public void DIPopulationTest()
+        {
+            var cb = new ContainerBuilder();
+            //whenever somebody asks for IDatabase , they will get OrdinaryDatabase, as a Singleton !
+            cb.RegisterType<OrdinaryDatabase>()
+                .As<IDatabase>()
+                .SingleInstance();
+
+            cb.RegisterType<ConfigurableFinder>();
+
+            using(var c = cb.Build())
+            {
+                var rf = c.Resolve<ConfigurableFinder>();
+                
+            }
         }
     }
 }
